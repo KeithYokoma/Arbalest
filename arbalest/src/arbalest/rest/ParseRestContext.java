@@ -1,7 +1,12 @@
 package arbalest.rest;
 
+import android.content.Context;
+import android.os.Handler;
 import android.util.SparseArray;
 
+import arbalest.rest.callback.ParseCallback;
+import arbalest.rest.callback.ParseCallbackManager;
+import arbalest.rest.exception.ParseRestException;
 import arbalest.rest.exception.ParseRestNetworkException;
 import arbalest.rest.http.ParseRestClient;
 import arbalest.rest.http.ParseRestClientFactory;
@@ -9,6 +14,7 @@ import arbalest.rest.net.annotation.ConvertedBy;
 import arbalest.rest.net.converter.EntityConversionPolicy;
 import arbalest.rest.net.converter.EntityConversionStrategy;
 
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,6 +23,7 @@ public class ParseRestContext {
     private final ParseRestClientFactory mFactory;
     private final Map<String, String> mHeaders;
     private SparseArray<ParseRestClient> mClients = new SparseArray<ParseRestClient>();
+    private ParseCallbackManager<ParseCallback<?>> mCallbackManager = new ParseCallbackManager<ParseCallback<?>>();
 
     protected ParseRestContext(ParseRestClientFactory factory, Map<String, String> headers) {
         mFactory = factory;
@@ -110,7 +117,57 @@ public class ParseRestContext {
      * 
      * @return
      */
-    public Map<String, String> getBaseHeaders() {
+    public synchronized Map<String, String> getBaseHeaders() {
         return new HashMap<String, String>(mHeaders);
+    }
+
+    /**
+     * 
+     * @return
+     */
+    public int getAndIncrementCallbackSeq() {
+        return mCallbackManager.getAndIncrementSeq();
+    }
+
+    public <T> void putParseCallback(Context context, ParseCallback<T> callback, int seq) {
+        mCallbackManager.put(context, callback, seq);
+    }
+
+    public <T> void callOnSuccess(final WeakReference<Context> ref, final int seq, final T result, Handler handler) {
+        if (ref.get() == null) {
+            return; // the context that has a callback already gone.
+        }
+
+        handler.post(new Runnable() {
+            @SuppressWarnings("unchecked")
+            @Override
+            public void run() {
+                ParseCallback<T> callback = (ParseCallback<T>) mCallbackManager.getAndRemove(ref.get(), seq);
+                if (callback != null) {
+                    callback.onSuccess(result);
+                }
+            }
+        });
+    }
+
+    public <T> void callOnFailure(final WeakReference<Context> ref, final int seq, final ParseRestException exp, Handler handler) {
+        if (ref.get() == null) {
+            return; // the context that has a callback already gone.
+        }
+
+        handler.post(new Runnable() {
+            @SuppressWarnings("unchecked")
+            @Override
+            public void run() {
+                ParseCallback<T> callback = (ParseCallback<T>) mCallbackManager.getAndRemove(ref.get(), seq);
+                if (callback != null) {
+                    callback.onFailure(exp);
+                }
+            }
+        });
+    }
+
+    public void removeCallbackFor(Context context) {
+        mCallbackManager.remove(context);
     }
 }

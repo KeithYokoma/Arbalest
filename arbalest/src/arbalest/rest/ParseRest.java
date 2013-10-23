@@ -1,11 +1,17 @@
 package arbalest.rest;
 
 import android.app.Application;
+import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Base64;
 import android.util.Log;
 
+import arbalest.rest.callback.ParseCallback;
+import arbalest.rest.concurrent.AsyncProcessor;
 import arbalest.rest.exception.ParseRestAuthorizationException;
 import arbalest.rest.exception.ParseRestConnectionException;
+import arbalest.rest.exception.ParseRestException;
 import arbalest.rest.exception.ParseRestNetworkException;
 import arbalest.rest.exception.ParseRestResponseException;
 import arbalest.rest.http.HttpUrlConnectionParseRestClientFactory;
@@ -13,10 +19,12 @@ import arbalest.rest.http.ParseRestClient;
 import arbalest.rest.net.Binary;
 import arbalest.utils.CloseableUtils;
 import arbalest.utils.ConnectivtiyManagerUtils;
+import arbalest.utils.ParseCallbackUtils;
 import arbalest.utils.ThreadUtils;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.ref.WeakReference;
 import java.util.Map;
 
 /**
@@ -39,6 +47,7 @@ public class ParseRest {
     private static volatile ParseRest sInstance;
     private final Application mApplication;
     private final ParseRestContext mRestContext;
+    private final Handler mHandler;
 
     /**
      * 
@@ -48,6 +57,7 @@ public class ParseRest {
     protected ParseRest(Application application, ParseRestContext restContext) {
         mApplication = application;
         mRestContext = restContext;
+        mHandler = new Handler(Looper.getMainLooper());
     }
 
     /**
@@ -96,6 +106,53 @@ public class ParseRest {
         }
     }
 
+    public void onDestroy(Context context) {
+        mRestContext.removeCallbackFor(context);
+    }
+
+    /**
+     * 
+     * @param context
+     * @param url
+     * @param requestBody
+     * @param callback
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    public <T> int post(Context context, String url, Object requestBody, ParseCallback<T> callback) {
+        return post(context, url, requestBody, callback, (Class<T>) ParseCallbackUtils.getType(callback));
+    }
+
+    /**
+     * 
+     * @param context
+     * @param url
+     * @param requestBody
+     * @param callback
+     * @param responseType
+     * @return
+     */
+    public <T> int post(Context context, final String url, final Object requestBody, ParseCallback<T> callback, final Class<?> responseType) {
+        final WeakReference<Context> ref = new WeakReference<Context>(context);
+        final int seq = mRestContext.getAndIncrementCallbackSeq();
+        mRestContext.putParseCallback(context, callback, seq);
+
+        AsyncProcessor.process(new Runnable() {
+            @SuppressWarnings("unchecked")
+            @Override
+            public void run() {
+                try {
+                    T result = (T) blockingPost(url, requestBody, responseType, seq);
+                    mRestContext.callOnSuccess(ref, seq, result, mHandler);
+                } catch (ParseRestException e) {
+                    mRestContext.callOnFailure(ref, seq, e, mHandler);
+                }
+            }
+        });
+
+        return seq;
+    }
+
     /**
      * 
      * @param url
@@ -130,6 +187,48 @@ public class ParseRest {
 
     /**
      * 
+     * @param context
+     * @param url
+     * @param binary
+     * @param callback
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    public <T> int postBinary(Context context, String url, Binary binary, ParseCallback<T> callback) {
+        return postBinary(context, url, binary, callback, (Class<T>) ParseCallbackUtils.getType(callback));
+    }
+
+    /**
+     * 
+     * @param context
+     * @param url
+     * @param binary
+     * @param callback
+     * @param responseType
+     * @return
+     */
+    public <T> int postBinary(Context context, final String url, final Binary binary, ParseCallback<T> callback, final Class<T> responseType) {
+        final WeakReference<Context> ref = new WeakReference<Context>(context);
+        final int seq = mRestContext.getAndIncrementCallbackSeq();
+        mRestContext.putParseCallback(context, callback, seq);
+
+        AsyncProcessor.process(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    T result = (T) blockingPostBinary(url, binary, responseType, seq);
+                    mRestContext.callOnSuccess(ref, seq, result, mHandler);
+                } catch (ParseRestException e) {
+                    mRestContext.callOnFailure(ref, seq, e, mHandler);
+                }
+            }
+        });
+
+        return seq;
+    }
+
+    /**
+     * 
      * @param url
      * @param binary
      * @param responseType
@@ -160,6 +259,31 @@ public class ParseRest {
         return sendAndReceive(url, METHOD_POST, binary.getContentType(), binary, responseType, mRestContext.getBaseHeaders(), seq);
     }
 
+    @SuppressWarnings("unchecked")
+    public <T> int get(Context context, String url, String key, Object requestBody, ParseCallback<T> callback) {
+        return get(context, url, key, requestBody, callback, (Class<T>) ParseCallbackUtils.getType(callback));
+    }
+
+    public <T> int get(Context context, final String url, final String key, final Object requestBody, ParseCallback<T> callback, final Class<?> responseType) {
+        final WeakReference<Context> ref = new WeakReference<Context>(context);
+        final int seq = mRestContext.getAndIncrementCallbackSeq();
+        mRestContext.putParseCallback(context, callback, seq);
+
+        AsyncProcessor.process(new Runnable() {
+            @SuppressWarnings("unchecked")
+            @Override
+            public void run() {
+                try {
+                    T result = (T) blockingGet(url, key, requestBody, responseType, seq);
+                    mRestContext.callOnSuccess(ref, seq, result, mHandler);
+                } catch (ParseRestException e) {
+                    mRestContext.callOnFailure(ref, seq, e, mHandler);
+                }
+            }
+        });
+
+        return seq;
+    }
     /**
      * 
      * @param url
@@ -202,6 +326,31 @@ public class ParseRest {
         return sendAndReceive(baseUrl, METHOD_GET, DEFAULT_CONTENT_TYPE, requestBody, responseType, mRestContext.getBaseHeaders(), seq);
     }
 
+    @SuppressWarnings("unchecked")
+    public <T> int put(Context context, String url, Object requestBody, ParseCallback<T> callback) {
+        return put(context, url, requestBody, callback, (Class<T>) ParseCallbackUtils.getType(callback));
+    }
+
+    public <T> int put(Context context, final String url, final Object requestBody, ParseCallback<T> callback, final Class<T> responseType) {
+        final WeakReference<Context> ref = new WeakReference<Context>(context);
+        final int seq = mRestContext.getAndIncrementCallbackSeq();
+        mRestContext.putParseCallback(context, callback, seq);
+
+        AsyncProcessor.process(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    T result = (T) blockingPut(url, requestBody, responseType, seq);
+                    mRestContext.callOnSuccess(ref, seq, result, mHandler);
+                } catch (ParseRestException e) {
+                    mRestContext.callOnFailure(ref, seq, e, mHandler);
+                }
+            }
+        });
+
+        return seq;
+    }
+
     /**
      * 
      * @param url
@@ -234,6 +383,31 @@ public class ParseRest {
         return sendAndReceive(url, METHOD_PUT, DEFAULT_CONTENT_TYPE, requestBody, responseType, mRestContext.getBaseHeaders(), seq);
     }
 
+    @SuppressWarnings("unchecked")
+    public <T> int putBinary(Context context, String url, Binary binary, ParseCallback<T> callback) {
+        return putBinary(context, url, binary, callback, (Class<T>) ParseCallbackUtils.getType(callback));
+    }
+
+    public <T> int putBinary(Context context, final String url, final Binary binary, ParseCallback<T> callback, final Class<T> responseType) {
+        final WeakReference<Context> ref = new WeakReference<Context>(context);
+        final int seq = mRestContext.getAndIncrementCallbackSeq();
+        mRestContext.putParseCallback(context, callback, seq);
+
+        AsyncProcessor.process(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    T result = (T) blockingPutBinary(url, binary, responseType, seq);
+                    mRestContext.callOnSuccess(ref, seq, result, mHandler);
+                } catch (ParseRestException e) {
+                    mRestContext.callOnFailure(ref, seq, e, mHandler);
+                }
+            }
+        });
+
+        return seq;
+    }
+
     /**
      * 
      * @param url
@@ -264,6 +438,31 @@ public class ParseRest {
     public <T> T blockingPutBinary(String url, Binary binary, Class<T> responseType, int seq) throws ParseRestConnectionException, ParseRestNetworkException, ParseRestResponseException, ParseRestAuthorizationException {
         ThreadUtils.checkNotMainThread();
         return sendAndReceive(url, METHOD_PUT, binary.getContentType(), binary, responseType, mRestContext.getBaseHeaders(), seq);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> int delete(Context context, String url, Object requestBody, ParseCallback<T> callback) {
+        return delete(context, url, requestBody, callback, (Class<T>) ParseCallbackUtils.getType(callback));
+    }
+
+    public <T> int delete(Context context, final String url, final Object requestBody, ParseCallback<T> callback, final Class<T> responseType) {
+        final WeakReference<Context> ref = new WeakReference<Context>(context);
+        final int seq = mRestContext.getAndIncrementCallbackSeq();
+        mRestContext.putParseCallback(context, callback, seq);
+
+        AsyncProcessor.process(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    T result = (T) blockingDelete(url, requestBody, responseType, seq);
+                    mRestContext.callOnSuccess(ref, seq, result, mHandler);
+                } catch (ParseRestException e) {
+                    mRestContext.callOnFailure(ref, seq, e, mHandler);
+                }
+            }
+        });
+
+        return seq;
     }
 
     /**
