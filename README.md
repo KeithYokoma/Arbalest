@@ -2,6 +2,31 @@
 
 Yet another Parse REST client for Android.
 
+## Getting started
+
+TODO
+
+## How to use
+
+1. Initialize ParseRest object on Application#onCreate()
+```Java
+package arbalest.sample;
+
+import android.app.Application;
+
+import arbalest.Arbalest;
+
+public class ArbalestApplication extends Application {
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        Arbalest.initialize(this, "your application id here", "your rest key here");
+    }
+}
+```
+
+TODO
+
 ## License
 
 ```
