@@ -9,6 +9,7 @@ TODO
 ## How to use
 
 1. Initialize ParseRest object on Application#onCreate()
+
 ```Java
 package arbalest.sample;
 
