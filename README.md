@@ -28,6 +28,10 @@ public class ArbalestApplication extends Application {
 
 TODO
 
+## Author
+
+KeithYokoma(Keith.Yokoma@gmail.com)
+
 ## License
 
 ```
