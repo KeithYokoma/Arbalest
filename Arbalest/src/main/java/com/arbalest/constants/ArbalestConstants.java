@@ -1,9 +1,23 @@
+/*
+ * Copyright (C) 2013 KeithYokoma. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.arbalest.constants;
 
-/**
- * Created by yokomakukeishin on 2013/12/10.
- */
-public class ArbalestConstants {
+public final class ArbalestConstants {
+    private ArbalestConstants() {}
+
     private static final String PARSE_API_URL = "https://api.parse.com/";
     private static final int PARSE_API_VERSION = 1;
 
@@ -17,4 +31,12 @@ public class ArbalestConstants {
     public static final String PARSE_API_PUSH_NOTIFICATION_URL = PARSE_API_URL_BASE + "push/";
     public static final String PARSE_API_INSTALLATION_URL = PARSE_API_URL_BASE + "installations/";
     public static final String PARSE_API_CLOUD_FUNCTIONS_URL = PARSE_API_URL_BASE + "functions/";
+
+    public static final String HEADER_PARSE_APPLICATION_ID = "X-Parse-Application-Id";
+    public static final String HEADER_PARSE_REST_API_KEY = "X-Parse-REST-API-Key";
+    public static final String DEFAULT_CONTENT_TYPE = "application/json";
+    public static final String METHOD_DELETE = "DELETE";
+    public static final String METHOD_PUT = "PUT";
+    public static final String METHOD_GET = "GET";
+    public static final String METHOD_POST = "POST";
 }

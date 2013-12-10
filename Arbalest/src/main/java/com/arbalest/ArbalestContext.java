@@ -22,6 +22,7 @@ import android.util.SparseArray;
 import com.amalgam.collection.ImmutableHashMap;
 import com.arbalest.callback.ArbalestCallback;
 import com.arbalest.callback.ArbalestCallbackManager;
+import com.arbalest.constants.ArbalestConstants;
 import com.arbalest.exception.ArbalestException;
 import com.arbalest.exception.ArbalestNetworkException;
 import com.arbalest.http.ArbalestClient;
@@ -46,10 +47,13 @@ public class ArbalestContext {
         mHeaders = new ImmutableHashMap<String, String>(headers);
     }
 
-    public static synchronized void initialize(ArbalestClientFactory factory, Map<String, String> headers) {
+    public static synchronized void initialize(ArbalestClientFactory factory, String applicationId, String restKey) {
         if (sInstance != null) {
             return;
         }
+        Map<String, String> headers = new HashMap<String, String>();
+        headers.put(ArbalestConstants.HEADER_PARSE_APPLICATION_ID, applicationId);
+        headers.put(ArbalestConstants.HEADER_PARSE_REST_API_KEY, restKey);
         sInstance = new ArbalestContext(factory, headers);
     }
 
@@ -112,7 +116,7 @@ public class ArbalestContext {
         return mCallbackManager.getAndIncrementSeq();
     }
 
-    public <T> void putParseCallback(Context context, ArbalestCallback<T> callback, int seq) {
+    public <T> void putArbalestCallback(Context context, ArbalestCallback<T> callback, int seq) {
         mCallbackManager.put(context, callback, seq);
     }
 

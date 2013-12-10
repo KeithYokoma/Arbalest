@@ -20,6 +20,7 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 
+import com.amalgam.os.ParcelFileDescriptorUtils;
 import com.arbalest.net.annotation.ConvertedBy;
 import com.arbalest.net.converter.EntityConversionPolicy;
 

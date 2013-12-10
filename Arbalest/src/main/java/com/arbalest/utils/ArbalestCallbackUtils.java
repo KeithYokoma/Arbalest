@@ -13,13 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arbalest.http;
+package com.arbalest.utils;
 
-import com.arbalest.exception.ArbalestNetworkException;
+import com.arbalest.callback.ArbalestCallback;
+import com.arbalest.http.ArbalestClient;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 
-/**
- * Created by yokomakukeishin on 2013/12/10.
- */
-public interface IArbalestClientFactory {
-    public ArbalestClient create(String url) throws ArbalestNetworkException;
+public final class ArbalestCallbackUtils {
+    private ArbalestCallbackUtils() {}
+
+    public static final <T> Type getType(ArbalestCallback<T> callback) {
+        if (callback == null) {
+            return null;
+        }
+
+        return ((ParameterizedType) callback.getClass().getGenericInterfaces()[0]).getActualTypeArguments()[0];
+    }
 }
