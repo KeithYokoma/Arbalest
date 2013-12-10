@@ -1,0 +1,38 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.6.+'
+    }
+}
+apply plugin: 'android-library'
+
+repositories {
+    mavenCentral()
+    maven { url 'https://raw.github.com/nohana/Amalgam/master/amalgam/repository/' }
+}
+
+android {
+    dependencies {
+        compile 'com.amalgam:Amalgam:0.2.4'
+        compile 'com.squareup.okhttp:okhttp:1.2.1'
+        compile 'com.google.code.gson:gson:2.2.4'
+    }
+    compileSdkVersion 19
+    buildToolsVersion "19.0.0"
+
+    defaultConfig {
+        minSdkVersion 8
+        targetSdkVersion 19
+    }
+    release {
+        runProguard false
+        proguardFile 'proguard-rules.txt'
+        proguardFile getDefaultProguardFile('proguard-android.txt')
+    }
+}
+
+dependencies {
+    compile 'com.android.support:appcompat-v7:+'
+}
