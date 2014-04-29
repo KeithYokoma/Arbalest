@@ -18,5 +18,6 @@ android {
 dependencies {
     compile 'com.amalgam:Amalgam:0.2.4'
     compile 'com.squareup.okhttp:okhttp:1.2.1'
+    compile 'com.squareup.retrofit:retrofit:1.5.0'
     compile 'com.google.code.gson:gson:2.2.4'
 }
